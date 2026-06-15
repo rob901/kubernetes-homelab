@@ -1,0 +1,12 @@
+# Terraform state — contains sensitive data and is machine-specific
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup
+
+# Terraform provider binaries — downloaded on `terraform init`
+terraform/.terraform/
+
+# Local override files
+terraform/*.tfvars
+terraform/*.tfvars.json
+terraform/override.tf
+terraform/override.tf.json
