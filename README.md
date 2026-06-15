@@ -186,15 +186,22 @@ terraform init
 terraform apply
 ```
 
-Confirm the plan with `yes`. This installs (via Helm):
+Confirm the plan with `yes`. This deploys the following services via Helm in dependency order:
 
-| Service | Namespace | Purpose |
-|---|---|---|
-| MetalLB | `metallb-system` | L2 load balancer, IP pool `10.55.55.150–170` |
-| NGINX Ingress | `ingress-nginx` | HTTP/S ingress controller |
-| cert-manager | `cert-manager` | TLS certificate management |
-| kube-prometheus-stack | `monitoring` | Prometheus, Grafana, Alertmanager |
-| Loki + Promtail | `monitoring` | Log aggregation |
+**MetalLB** (`metallb-system`)
+k3s has no built-in load balancer that works on bare metal. MetalLB fills that gap — it watches for Kubernetes `Service` objects of type `LoadBalancer` and assigns them a real IP from a configured pool (`10.55.55.150–170` by default). Without it, LoadBalancer services would stay in `<pending>` forever.
+
+**NGINX Ingress Controller** (`ingress-nginx`)
+Routes external HTTP/S traffic into the cluster based on hostname and path rules. It receives a LoadBalancer IP from MetalLB (`10.55.55.150`) and acts as the single entry point for all web-facing services. k3s ships with Traefik by default, but it is disabled here in favour of NGINX for broader ecosystem compatibility.
+
+**cert-manager** (`cert-manager`)
+Automates TLS certificate provisioning and renewal inside the cluster. It watches `Ingress` and `Certificate` objects and can issue certificates from Let’s Encrypt or a self-signed CA, removing the need for manual certificate management.
+
+**kube-prometheus-stack** (`monitoring`)
+Deploys Prometheus (metrics scraping and alerting), Grafana (dashboards), and Alertmanager (alert routing and silencing) as a pre-wired bundle. Prometheus scrapes metrics from cluster nodes and workloads automatically. Ingress rules are created for all three services so they are reachable by hostname from your local network.
+
+**Loki + Promtail** (`monitoring`)
+Loki is a log aggregation system designed to work alongside Prometheus. Promtail runs as a DaemonSet on each node, tails container logs, and ships them to Loki. Grafana is pre-configured with a Loki datasource so you can query logs alongside metrics in the same UI without a separate logging stack.
 
 ### 6.3 Configure variables (optional)
 
